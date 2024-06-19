@@ -1,0 +1,43 @@
+name: Bug Workflow
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  BugWorkflow:
+    runs-on: ubuntu-latest
+    
+    if: github.event_name == 'issues' &&
+      (github.event.action == 'opened' || github.event.action == 'edited') && 
+      contains(github.event.issue.title, '[Bug]')
+
+    steps:
+      - name: Check out scripts
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        
+      - name: Feedback Issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            var commentBody = "👋 @${{ github.event.issue.user.login }} Thank for rasing this up. we will look into this ASAP."
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            })
+            
+      # - name: Close issue
+      #   id: close_issue
+      #   env:
+      #     GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+      #   shell: pwsh        
+      #   run: |
+      #     # Close Issue
+      #       cd $env:GITHUB_WORKSPACE
+      #       gh issue close --comment "@${{ github.event.issue.user.login }} This issue has been resloved." "${{ github.event.issue.number }}"
